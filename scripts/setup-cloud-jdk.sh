@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -x "$ROOT/.tools/jdk/usr/lib/jvm/java-21-openjdk-amd64/bin/javac" ]; then exit 0; fi
-if command -v javac >/dev/null 2>&1 && javac -version 2>&1 | rg -q '^javac 21\.'; then exit 0; fi
+if command -v javac >/dev/null 2>&1 && javac -version 2>&1 | grep -q '^javac 21\.'; then exit 0; fi
 if [ "$(uname -m)" != x86_64 ] || [ ! -f /usr/share/keyrings/debian-archive-keyring.gpg ]; then
   echo 'Install a Java 21 JDK, then rerun setup.' >&2
   exit 1

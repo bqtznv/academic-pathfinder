@@ -8,7 +8,19 @@ The backend follows the supplied **five-module modular monolith**. Planning orch
 
 ## Run locally
 
-Prerequisites: Node.js 22.12+ (tested with 24), Docker with Compose, a Java 21 JDK, Bash, Python 3, curl, tar, sha512sum, and ripgrep. The Maven launcher downloads Maven 3.9.11 and verifies its SHA-512 checksum. On the Debian cloud image, setup can install a signed, checksum-verified JDK into the ignored `.tools` directory if only a JRE is available.
+Prerequisites: Node.js 22.12+ (tested with 24), Docker with Compose, a Java 21 JDK, Bash, Python 3, curl, tar, and either sha512sum or shasum (included with macOS). The Maven launcher downloads Maven 3.9.11 and verifies its SHA-512 checksum. On the Debian cloud image, setup can install a signed, checksum-verified JDK into the ignored `.tools` directory if only a JRE is available.
+
+On macOS with Homebrew:
+
+```bash
+brew install node@24 openjdk@21 python
+brew install --cask docker
+export PATH="$(brew --prefix node@24)/bin:$PATH"
+export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+Open Docker Desktop and wait until it is running before setup. No CPPFLAGS setting is needed for this Java application. Add these exports to `~/.zshrc` if you want them in new terminal sessions.
 
 ```bash
 ./scripts/setup.sh

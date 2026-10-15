@@ -7,7 +7,6 @@ if [ -x "$TOOLS/jdk/usr/lib/jvm/java-21-openjdk-amd64/bin/javac" ]; then
   export JAVA_HOME="$TOOLS/jdk/usr/lib/jvm/java-21-openjdk-amd64"
 fi
 mkdir -p "$TOOLS"
-PROXY_ARGS=()
 if [ -n "${HTTPS_PROXY:-${https_proxy:-}}" ]; then
   python3 - "$TOOLS/maven-settings.xml" <<'PY'
 import os,sys,urllib.parse,xml.sax.saxutils
@@ -18,10 +17,10 @@ host=xml.sax.saxutils.escape(p.hostname)
 with open(sys.argv[1],'w') as f:
     f.write(f'<settings><proxies><proxy><id>environment</id><active>true</active><protocol>http</protocol><host>{host}</host><port>{p.port or 80}</port><nonProxyHosts>localhost|127.0.0.1</nonProxyHosts></proxy></proxies></settings>')
 PY
-  PROXY_ARGS=(-s "$TOOLS/maven-settings.xml")
+  set -- -s "$TOOLS/maven-settings.xml" "$@"
 fi
 if command -v mvn >/dev/null 2>&1; then
-  exec mvn "${PROXY_ARGS[@]}" -Dmaven.repo.local="$ROOT/.cache/maven" "$@"
+  exec mvn -Dmaven.repo.local="$ROOT/.cache/maven" "$@"
 fi
 if [ ! -x "$TOOLS/apache-maven-$VERSION/bin/mvn" ]; then
   mkdir -p "$TOOLS"
@@ -29,7 +28,12 @@ if [ ! -x "$TOOLS/apache-maven-$VERSION/bin/mvn" ]; then
   curl --fail --silent --show-error --location "$URL" -o "$TOOLS/maven.tar.gz"
   curl --fail --silent --show-error --location "$URL.sha512" -o "$TOOLS/maven.sha512"
   EXPECTED="$(awk '{print $1}' "$TOOLS/maven.sha512")"
-  printf '%s  %s\n' "$EXPECTED" "$TOOLS/maven.tar.gz" | sha512sum --check --status
+  if command -v sha512sum >/dev/null 2>&1; then
+    printf '%s  %s\n' "$EXPECTED" "$TOOLS/maven.tar.gz" | sha512sum --check --status
+  else
+    # macOS ships shasum rather than GNU sha512sum.
+    printf '%s  %s\n' "$EXPECTED" "$TOOLS/maven.tar.gz" | shasum -a 512 --check --status
+  fi
   tar -xzf "$TOOLS/maven.tar.gz" -C "$TOOLS"
 fi
-exec "$TOOLS/apache-maven-$VERSION/bin/mvn" "${PROXY_ARGS[@]}" -Dmaven.repo.local="$ROOT/.cache/maven" "$@"
+exec "$TOOLS/apache-maven-$VERSION/bin/mvn" -Dmaven.repo.local="$ROOT/.cache/maven" "$@"

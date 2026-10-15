@@ -21,7 +21,11 @@ for ((i=0;i<60;i++)); do
   if curl -fsS "http://127.0.0.1:$BACKEND_PORT/api/health" >/dev/null 2>&1 && curl -fsS http://127.0.0.1:5173 >/dev/null 2>&1; then
     echo "Academic Path Planner is running: frontend port 5173, API port $BACKEND_PORT."
     echo 'Logs: .local/frontend.log and .local/backend.log. Stop this script to stop the two app processes.'
-    wait -n "$BACKEND_PID" "$FRONTEND_PID"
+    # macOS ships Bash 3.2, which does not support wait -n.
+    while kill -0 "$BACKEND_PID" 2>/dev/null && kill -0 "$FRONTEND_PID" 2>/dev/null; do
+      sleep 1
+    done
+    echo 'An application process stopped. Inspect the application logs.' >&2
     exit 1
   fi
   if ! kill -0 "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null; then cat .local/backend.log .local/frontend.log; exit 1; fi
