@@ -1,0 +1,23 @@
+[
+  {
+    "courseCode": "CSS 109",
+    "status": "PASSED",
+    "grade": "B+",
+    "term": "2024-FALL",
+    "approved": false
+  },
+  {
+    "courseCode": "CSS 112",
+    "status": "PASSED",
+    "grade": "A-",
+    "term": "2024-FALL",
+    "approved": false
+  },
+  {
+    "courseCode": "CSS 301",
+    "status": "CURRENT",
+    "grade": "",
+    "term": "2026-FALL",
+    "approved": false
+  }
+]

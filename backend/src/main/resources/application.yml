@@ -1,0 +1,24 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${COOKIE_SECURE:false}
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5432/pathfinder}
+    username: ${DATABASE_USER:planner}
+    password: ${DATABASE_PASSWORD:planner_dev}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+app:
+  demo-enabled: ${DEMO_ENABLED:true}
+  clock-date: ${PLANNER_DATE:2026-10-15}

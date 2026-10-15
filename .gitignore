@@ -1,0 +1,12 @@
+.tools/
+.cache/
+.local/
+.env
+backend/target/
+frontend/node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+*.log
+*.tsbuildinfo
+.DS_Store
