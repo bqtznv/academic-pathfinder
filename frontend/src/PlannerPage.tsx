@@ -11,8 +11,6 @@ import {
   RotateCcw,
   Save,
   Search,
-  Send,
-  Sparkles,
   Trash2,
   X,
   AlertTriangle,
@@ -67,7 +65,6 @@ export default function PlannerPage({
     [destination, setDestination] = useState(detail.currentTerm);
   const [addTerm, setAddTerm] = useState(false),
     [newTerm, setNewTerm] = useState("2028-FALL"),
-    [confirmGenerate, setConfirmGenerate] = useState(false),
     [deletePlan, setDeletePlan] = useState(false);
   const [scenario, setScenario] = useState({
       action: "move",
@@ -170,27 +167,6 @@ export default function PlannerPage({
       setBusy(false);
     }
   }
-  async function generate() {
-    setBusy(true);
-    setError("");
-    try {
-      const r = await api<{ data: PlanData; evaluation: Evaluation }>(
-        `/plans/${detail.plan.id}/generate`,
-        "POST",
-        { curriculumId: curriculum.id, data },
-      );
-      setData(r.data);
-      setEvaluation(r.evaluation);
-      setConfirmGenerate(false);
-      notify(
-        "A suggested path is ready to review. Save when you’re happy with it.",
-      );
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
   function reset() {
     setData(structuredClone(detail.plan.data));
     setName(detail.plan.name);
@@ -224,7 +200,6 @@ export default function PlannerPage({
         <div>
           <span className="eyebrow">ACADEMIC OPERATIONS</span>
           <h1>Semester planner</h1>
-          <p>Build a path. Try a change. Know what it means.</p>
         </div>
         <Button variant="secondary" onClick={create}>
           <Plus size={16} />
@@ -321,13 +296,6 @@ export default function PlannerPage({
             ))}
           </select>
         </label>
-        <div className="settings-action">
-          <Button variant="secondary" onClick={() => setConfirmGenerate(true)}>
-            <Sparkles size={16} />
-            Suggest a path
-          </Button>
-          <small>Reviewable draft · {curriculum.data.maxEcts} ECTS limit</small>
-        </div>
       </section>
       <div className="planner-layout">
         <div className="planner-main">
@@ -623,10 +591,10 @@ export default function PlannerPage({
           </div>
           {Object.keys(data.semesters).length === 0 && (
             <div className="empty">
-              <h3>A blank path, full of possibilities</h3>
-              <p>Suggest a path or add a semester to begin.</p>
-              <Button onClick={() => setConfirmGenerate(true)}>
-                Suggest a path
+              <h3>No semesters</h3>
+              <Button onClick={() => setAddTerm(true)}>
+                <Plus size={15} />
+                Add semester
               </Button>
             </div>
           )}
@@ -645,52 +613,6 @@ export default function PlannerPage({
             <div className="panel-body">
               <Issues issues={evaluation.issues} />
             </div>
-          </section>
-          <section className="panel review-submit">
-            <div>
-              <Send size={21} />
-              <div>
-                <h3>Ready for a second opinion?</h3>
-                <p>
-                  {dirty
-                    ? "Save your changes before sending your path to your advisor."
-                    : detail.plan.submitted
-                      ? "This saved revision has been sent to your advisor."
-                      : "Send your saved plan to your assigned advisor for review."}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="secondary"
-              disabled={dirty || busy || detail.plan.submitted}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const d = await api<Detail>(
-                    `/plans/${detail.plan.id}/submit`,
-                    "POST",
-                  );
-                  await onSaved(d);
-                  notify("Plan submitted to your advisor.");
-                } catch (e) {
-                  setError((e as Error).message);
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {detail.plan.submitted ? (
-                <>
-                  <Check size={15} />
-                  Submitted
-                </>
-              ) : (
-                <>
-                  <Send size={15} />
-                  Request review
-                </>
-              )}
-            </Button>
           </section>
           <button
             className="text-button danger-text delete-plan-link"
@@ -828,18 +750,6 @@ export default function PlannerPage({
               </div>
             )}
           </section>
-          <div className="tip-card">
-            <span className="eyebrow">PLAN WITH PERSPECTIVE</span>
-            <h3>One move can change the path.</h3>
-            <p>
-              A prerequisite must be completed before the next course begins.
-              Watch the academic checks as you move courses.
-            </p>
-            <small>
-              Draft generation is a constraint-aware starting point, not a
-              guaranteed fastest path.
-            </small>
-          </div>
         </aside>
       </div>
       {move && (
@@ -927,48 +837,13 @@ export default function PlannerPage({
           </div>
         </Modal>
       )}
-      {confirmGenerate && (
-        <Modal
-          title="Suggest a starting path?"
-          onClose={() => setConfirmGenerate(false)}
-        >
-          <div className="modal-body">
-            <p>
-              The planner will arrange remaining core courses and elective
-              choices using prerequisites, offerings, class times and ECTS
-              limits.
-            </p>
-            <p className="muted">
-              This replaces the semester arrangement in your draft. Your saved
-              plan stays available until you save. A valid finish is an
-              estimate, not a guarantee of the earliest possible graduation.
-            </p>
-            {error && <div className="form-error">{error}</div>}
-          </div>
-          <div className="modal-actions">
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmGenerate(false)}
-            >
-              Keep draft
-            </Button>
-            <Button busy={busy} onClick={generate}>
-              <Sparkles size={15} />
-              Suggest path
-            </Button>
-          </div>
-        </Modal>
-      )}
       {deletePlan && (
         <Modal
           title="Delete this saved plan?"
           onClose={() => setDeletePlan(false)}
         >
           <div className="modal-body">
-            <p>
-              “{detail.plan.name}” and its advisor reviews will be removed. Your
-              academic records and other plans are retained.
-            </p>
+            <p>Delete “{detail.plan.name}”?</p>
             {error && <div className="form-error">{error}</div>}
           </div>
           <div className="modal-actions">

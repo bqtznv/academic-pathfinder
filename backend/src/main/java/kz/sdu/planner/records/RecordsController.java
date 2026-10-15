@@ -75,7 +75,7 @@ public class RecordsController {
           .anyMatch(e -> e.courseCode().equals(r.courseCode()) && e.term().equals(r.term())))
         warnings.add(r.courseCode() + " (" + r.term() + ") will replace the existing attempt.");
       if (r.status().equals("TRANSFER"))
-        warnings.add(r.courseCode() + ": transfer credit will need advisor approval.");
+        warnings.add(r.courseCode() + ": transfer credit will need administrator approval.");
     }
     return Map.of("rows", rows, "warnings", warnings);
   }
@@ -88,23 +88,22 @@ public class RecordsController {
     return Map.of("saved", c.rows().size());
   }
 
-  @GetMapping("/api/advisor/students")
+  @GetMapping("/api/admin/students")
   List<User> students() {
-    accounts.role("ADVISOR", "ADMIN");
-    var me = accounts.current();
-    return users.students(me.id(), me.role().equals("ADMIN"));
+    accounts.role("ADMIN");
+    return users.students();
   }
 
-  @GetMapping("/api/advisor/students/{id}/records")
+  @GetMapping("/api/admin/students/{id}/records")
   List<AcademicRecord> studentRecords(@PathVariable UUID id) {
-    accounts.role("ADVISOR", "ADMIN");
+    accounts.role("ADMIN");
     accounts.viewStudent(id);
     return service.list(id);
   }
 
-  @PostMapping("/api/advisor/students/{id}/records/{recordId}/approve")
+  @PostMapping("/api/admin/students/{id}/records/{recordId}/approve")
   void approve(@PathVariable UUID id, @PathVariable UUID recordId) {
-    accounts.role("ADVISOR", "ADMIN");
+    accounts.role("ADMIN");
     accounts.viewStudent(id);
     repository.approve(id, recordId);
   }

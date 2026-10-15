@@ -22,7 +22,6 @@ public class DemoData implements ApplicationRunner {
   private final CurriculumRepository curricula;
   private final RecordRepository records;
   private final PlanRepository plans;
-  private final Planning planning;
   private final PasswordEncoder passwords;
 
   public DemoData(
@@ -30,13 +29,11 @@ public class DemoData implements ApplicationRunner {
       CurriculumRepository c,
       RecordRepository r,
       PlanRepository p,
-      Planning s,
       PasswordEncoder e) {
     users = u;
     curricula = c;
     records = r;
     plans = p;
-    planning = s;
     passwords = e;
   }
 
@@ -135,19 +132,6 @@ public class DemoData implements ApplicationRunner {
       }
     } else curriculum = curricula.latest("Computer Science (EN)", 2024);
     String hash = passwords.encode("Planner2026!");
-    var advisor =
-        users
-            .byEmail("advisor@planner.local")
-            .orElseGet(
-                () ->
-                    users.create(
-                        "advisor@planner.local",
-                        hash,
-                        "Dana Karimova",
-                        "ADVISOR",
-                        "Computer Science (EN)",
-                        2024,
-                        null));
     if (users.byEmail("admin@planner.local").isEmpty())
       users.create(
           "admin@planner.local",
@@ -155,8 +139,7 @@ public class DemoData implements ApplicationRunner {
           "Curriculum Administrator",
           "ADMIN",
           "Computer Science (EN)",
-          2024,
-          null);
+          2024);
     var student =
         users.create(
             "student@planner.local",
@@ -164,8 +147,7 @@ public class DemoData implements ApplicationRunner {
             "Atabek Bakhtyzhanov",
             "STUDENT",
             "Computer Science (EN)",
-            2024,
-            advisor.id());
+            2024);
     for (var c : curriculum.data().courses())
       if (c.required() && c.suggestedSemester() <= 5) {
         int sem = c.suggestedSemester();
@@ -175,11 +157,25 @@ public class DemoData implements ApplicationRunner {
             new AcademicRecord(
                 null, c.code(), sem < 5 ? "PASSED" : "CURRENT", sem < 5 ? "B+" : "", term, false));
       }
-    var draft =
-        planning.generate(
-            student.id(),
-            curriculum.id(),
-            new PlanData(Map.of(), List.of(), "2028-SPRING", List.of()));
-    plans.create(student.id(), "My graduation path", curriculum.id(), draft);
+    // Fixed fixture; new student plans are created empty and arranged manually.
+    var semesters = new LinkedHashMap<String, List<String>>();
+    var electives = new ArrayList<String>();
+    for (var c : curriculum.data().courses())
+      if (c.suggestedSemester() >= 5
+          && (c.required()
+              || Set.of(
+                      "CSS 411", "CSS 413", "CSS 412", "CSS 414", "MDE 301", "MDE 303", "MDE 302",
+                      "MDE 304")
+                  .contains(c.code()))) {
+        int sem = c.suggestedSemester();
+        String term = (2024 + sem / 2) + (sem % 2 == 1 ? "-FALL" : "-SPRING");
+        semesters.computeIfAbsent(term, k -> new ArrayList<>()).add(c.code());
+        if (!c.required()) electives.add(c.code());
+      }
+    plans.create(
+        student.id(),
+        "My graduation path",
+        curriculum.id(),
+        new PlanData(semesters, electives, "2028-SPRING", List.of()));
   }
 }

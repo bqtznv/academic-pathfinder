@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  BookOpen,
-  Check,
-  GraduationCap,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowRight, GraduationCap } from "lucide-react";
 import { api, refreshCsrf } from "./api";
 import type { User } from "./types";
 import { Button } from "./components";
@@ -77,46 +71,14 @@ export default function Auth({ onLogin }: { onLogin: (u: User) => void }) {
       <section className="auth-story">
         <Brand />
         <div className="auth-story-main">
-          <span className="eyebrow light">ACADEMIC PATH PLANNER</span>
-          <h1>
-            Your degree.
-            <br />
-            Your direction.
-          </h1>
-          <p>
-            Turn your curriculum into a clear, semester-by-semester path to
-            graduation.
-          </p>
-          <div className="story-steps">
-            <div>
-              <Check size={16} />
-              Understand what’s left
-            </div>
-            <div>
-              <Check size={16} />
-              Test your next move
-            </div>
-            <div>
-              <Check size={16} />
-              Plan with confidence
-            </div>
-          </div>
-        </div>
-        <div className="auth-foot">
-          <BookOpen size={17} /> Built around your academic journey
+          <h1>Academic Path Planner</h1>
         </div>
       </section>
       <section className="auth-form-side">
         <div className="auth-form">
           <span className="eyebrow">STUDENT INFORMATION SYSTEM</span>
-          <h2>
-            {register ? "Start your academic path" : "Welcome to your planner"}
-          </h2>
-          <p>
-            {register
-              ? "Create a planner account and select your curriculum."
-              : "Sign in to see your progress and plan what comes next."}
-          </p>
+          <h2>{register ? "Create account" : "Sign in"}</h2>
+
           <form onSubmit={signIn}>
             {register && (
               <label>
@@ -194,13 +156,8 @@ export default function Auth({ onLogin }: { onLogin: (u: User) => void }) {
             </button>
           </p>
           <div className="demo-box">
-            <div>
-              <ShieldCheck size={17} />
-              <strong>Explore the sample portal</strong>
-            </div>
-            <p>Fictional academic data. No SDU account needed.</p>
             <div className="demo-buttons">
-              {["student", "advisor", "admin"].map((role) => (
+              {["student", "admin"].map((role) => (
                 <Button
                   key={role}
                   variant="secondary"
@@ -214,9 +171,6 @@ export default function Auth({ onLogin }: { onLogin: (u: User) => void }) {
               ))}
             </div>
           </div>
-          <small className="independent-note">
-            Independent academic planning project. Not an official SDU service.
-          </small>
         </div>
       </section>
     </main>

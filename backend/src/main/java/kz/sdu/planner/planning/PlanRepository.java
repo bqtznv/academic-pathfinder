@@ -28,7 +28,6 @@ public class PlanRepository {
         r.getObject("curriculum_id", UUID.class),
         json.read(r.getString("data"), PlanData.class),
         r.getInt("revision"),
-        r.getBoolean("submitted"),
         r.getString("updated_at"));
   }
 
@@ -58,7 +57,7 @@ public class PlanRepository {
   public Plan save(UUID id, int revision, String name, UUID curriculum, PlanData data) {
     if (db.update(
             "update plans set"
-                + " name=?,curriculum_id=?,data=?::jsonb,revision=revision+1,submitted=false,updated_at=now()"
+                + " name=?,curriculum_id=?,data=?::jsonb,revision=revision+1,updated_at=now()"
                 + " where id=? and revision=?",
             name,
             curriculum,
@@ -71,40 +70,7 @@ public class PlanRepository {
     return get(id);
   }
 
-  public void submit(UUID id) {
-    db.update("update plans set submitted=true where id=?", id);
-  }
-
   public void delete(UUID id) {
     db.update("delete from plans where id=?", id);
-  }
-
-  public List<Review> reviews(UUID plan, int revision, String hash) {
-    return db.query(
-        "select r.*,u.name as advisor from reviews r join users u on u.id=r.advisor_id where"
-            + " plan_id=? order by created_at desc",
-        (r, i) ->
-            new Review(
-                r.getObject("id", UUID.class),
-                r.getString("advisor"),
-                r.getInt("revision"),
-                r.getString("decision"),
-                r.getString("comment"),
-                r.getString("created_at"),
-                revision == r.getInt("revision") && hash.equals(r.getString("context_hash"))),
-        plan);
-  }
-
-  public void review(Plan p, UUID advisor, String decision, String comment, String hash) {
-    db.update(
-        "insert into reviews(id,plan_id,advisor_id,revision,decision,comment,context_hash)"
-            + " values(?,?,?,?,?,?,?)",
-        UUID.randomUUID(),
-        p.id(),
-        advisor,
-        p.revision(),
-        decision,
-        comment,
-        hash);
   }
 }

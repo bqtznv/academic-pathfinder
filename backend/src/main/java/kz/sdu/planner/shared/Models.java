@@ -9,13 +9,7 @@ public final class Models {
   private Models() {}
 
   public record User(
-      UUID id,
-      String email,
-      String name,
-      String role,
-      String program,
-      int curriculumYear,
-      UUID advisorId) {}
+      UUID id, String email, String name, String role, String program, int curriculumYear) {}
 
   public record Course(
       String code,
@@ -102,7 +96,6 @@ public final class Models {
       UUID curriculumId,
       PlanData data,
       int revision,
-      boolean submitted,
       String updatedAt) {}
 
   public record Issue(
@@ -121,13 +114,4 @@ public final class Models {
       List<Issue> issues,
       List<String> missingCourses,
       List<Requirement> requirements) {}
-
-  public record Review(
-      UUID id,
-      String advisor,
-      int revision,
-      String decision,
-      String comment,
-      String createdAt,
-      boolean current) {}
 }

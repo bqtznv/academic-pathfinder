@@ -57,7 +57,7 @@ public class AcademicEngine {
                     new Issue(
                         "WARNING",
                         "TRANSFER_PENDING",
-                        "Transfer credit needs advisor approval.",
+                        "Transfer credit needs administrator approval.",
                         r.term(),
                         r.courseCode())));
     var scheduled = new HashMap<String, Term>();
@@ -237,100 +237,6 @@ public class AcademicEngine {
         issues,
         missing,
         requirements);
-  }
-
-  public PlanData generate(
-      Curriculum curriculum,
-      List<Offering> offerings,
-      List<AcademicRecord> records,
-      Term start,
-      List<String> choices,
-      String target,
-      List<String> failed) {
-    var courses =
-        curriculum.data().courses().stream().collect(Collectors.toMap(Course::code, c -> c));
-    var earned =
-        records.stream()
-            .filter(
-                r ->
-                    !failed.contains(r.courseCode())
-                        && (r.status().equals("PASSED")
-                            || r.status().equals("TRANSFER") && r.approved()))
-            .map(AcademicRecord::courseCode)
-            .collect(Collectors.toCollection(HashSet::new));
-    var selected = new ArrayList<>(choices);
-    for (var g : curriculum.data().electiveGroups()) {
-      int credit =
-          courses.values().stream()
-              .filter(
-                  c ->
-                      g.id().equals(c.electiveGroup())
-                          && (earned.contains(c.code()) || selected.contains(c.code())))
-              .mapToInt(Course::ects)
-              .sum();
-      for (var c : curriculum.data().courses())
-        if (credit < g.ectsRequired()
-            && g.id().equals(c.electiveGroup())
-            && !earned.contains(c.code())
-            && !selected.contains(c.code())) {
-          selected.add(c.code());
-          credit += c.ects();
-        }
-    }
-    var remaining =
-        new ArrayList<>(
-            curriculum.data().courses().stream()
-                .filter(
-                    c ->
-                        (c.required() || selected.contains(c.code())) && !earned.contains(c.code()))
-                .sorted(Comparator.comparingInt(Course::suggestedSemester))
-                .toList());
-    var semesters = new LinkedHashMap<String, List<String>>();
-    var done = new HashSet<>(earned);
-    // Current enrollment remains in its actual term; invalid choices are explained by evaluate().
-    for (var r : records)
-      if (r.status().equals("CURRENT")
-          && !failed.contains(r.courseCode())
-          && courses.containsKey(r.courseCode())) {
-        semesters.computeIfAbsent(r.term(), k -> new ArrayList<>());
-        if (!semesters.get(r.term()).contains(r.courseCode()))
-          semesters.get(r.term()).add(r.courseCode());
-        remaining.removeIf(c -> c.code().equals(r.courseCode()));
-      }
-    for (var e : semesters.entrySet())
-      if (Term.parse(e.getKey()).compareTo(start) < 0) done.addAll(e.getValue());
-    Term term = start;
-    for (int n = 0; n < 30 && !remaining.isEmpty(); n++, term = term.next()) {
-      var list = semesters.computeIfAbsent(term.toString(), k -> new ArrayList<>());
-      int load = list.stream().map(courses::get).mapToInt(Course::ects).sum();
-      for (var it = remaining.iterator(); it.hasNext(); ) {
-        var c = it.next();
-        var offer = offering(offerings, c.code(), term);
-        int limit =
-            term.season().equals("SUMMER")
-                ? Math.min(15, curriculum.data().maxEcts())
-                : curriculum.data().maxEcts();
-        if (done.containsAll(c.prerequisites())
-            && offer.isPresent()
-            && offer.get().available()
-            && load + c.ects() <= limit) {
-          boolean conflict = false;
-          for (String code : list) {
-            var existing = offering(offerings, code, term);
-            if (existing.isPresent() && clashes(offer.get().slots(), existing.get().slots()))
-              conflict = true;
-          }
-          if (!conflict) {
-            list.add(c.code());
-            load += c.ects();
-            it.remove();
-          }
-        }
-      }
-      done.addAll(list);
-    }
-    semesters.entrySet().removeIf(e -> e.getValue().isEmpty());
-    return new PlanData(semesters, selected, target, failed);
   }
 
   public Optional<Offering> offering(List<Offering> offerings, String code, Term term) {

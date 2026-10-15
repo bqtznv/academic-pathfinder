@@ -5,12 +5,7 @@ async function signIn(page: Page, role = "student") {
   await page.goto("/");
   await page
     .getByRole("button", {
-      name:
-        role === "admin"
-          ? "Administrator"
-          : role === "advisor"
-            ? "Advisor"
-            : "Student",
+      name: role === "admin" ? "Administrator" : "Student",
       exact: true,
     })
     .click();
@@ -196,56 +191,78 @@ test("new student reviews an import before confirming academic records", async (
     .getByRole("button", { name: "Create my first path", exact: true })
     .click();
   await page.getByLabel("Path name").fill("New student path");
-  await page
-    .getByRole("button", { name: "Create starting path", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Create path", exact: true }).click();
   await expect(page.getByLabel("Plan name", { exact: true })).toHaveValue(
     "New student path",
   );
   await expect(page.locator(".evaluation-foot")).toContainText("10 earned");
+  const created = (await request(raw, "/plans"))[0];
+  expect(created.data.semesters).toEqual({});
+  await page
+    .getByRole("button", { name: "Add semester", exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Add semester", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add CSS 101", exact: true }).click();
+  await page.getByRole("button", { name: "Place course", exact: true }).click();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Save changes", exact: true }),
+  ).toBeDisabled();
+  const saved = await request(raw, `/plans/${created.id}`);
+  expect(Object.values(saved.plan.data.semesters).flat()).toContain("CSS 101");
 });
 
-test("advisor reviews a submitted plan and the student sees the decision", async ({
+test("logout ends the session and removed features are absent on desktop and mobile", async ({
   page,
 }) => {
-  const raw = page.request;
   await signIn(page);
-  const original = (await request(raw, "/plans"))[0];
-  const copy = await request(raw, "/plans", "POST", {
-    name: "Advisor browser review",
-    curriculumId: original.curriculumId,
-    data: original.data,
-  });
-  await request(raw, `/plans/${copy.plan.id}/submit`, "POST");
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Welcome to your planner" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Advisor", exact: true }).click();
+    page.getByRole("button", { name: "Advisor review", exact: true }),
+  ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Advisor workspace", exact: true }),
-  ).toBeVisible();
-  await page
-    .getByLabel("Student", { exact: true })
-    .selectOption({ label: "Atabek Bakhtyzhanov · student@planner.local" });
-  await page.getByLabel("Study path").selectOption(copy.plan.id);
-  await page.getByLabel("Decision").selectOption("APPROVED");
-  await page
-    .getByLabel("Comments")
-    .fill(
-      "Reviewed prerequisites, availability, class times and credit loads.",
-    );
-  await page.getByRole("button", { name: "Save review", exact: true }).click();
-  await expect(page.locator(".review-history")).toContainText("Approved");
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await page.getByRole("button", { name: "Student", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Advisor review", exact: true })
-    .click();
-  await expect(page.locator(".review-history")).toContainText(
-    "Reviewed prerequisites",
+    page.locator(".portal-footer,.sidebar-tip,.sample-indicator,.tip-card"),
+  ).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Sample academic data");
+  await expect(page.locator("body")).not.toContainText(
+    "Independent student project",
   );
-  await request(raw, `/plans/${copy.plan.id}`, "DELETE");
+  await page
+    .getByRole("button", { name: "Semester planner", exact: false })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: /Suggest.*path/i }),
+  ).toHaveCount(0);
+  await page
+    .getByLabel("Plan name", { exact: true })
+    .fill("Unsaved logout check");
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("unsaved plan changes");
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await expect(page.getByLabel("Plan name", { exact: true })).toHaveValue(
+    "Unsaved logout check",
+  );
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Discard & continue", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Sign in", exact: true }),
+  ).toBeVisible();
+  expect((await page.request.get("/api/auth/me")).status()).toBe(401);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Student", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Logout", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Sign in", exact: true }),
+  ).toBeVisible();
 });
 
 test("administrator validates and publishes a new immutable curriculum version", async ({
@@ -328,4 +345,46 @@ test("mobile navigation and planner stay within the viewport", async ({
     path: "test-results/planner-mobile.png",
     fullPage: true,
   });
+});
+
+test("administrator approves transfer credits without an advisor workspace", async ({
+  page,
+}) => {
+  await signIn(page);
+  const raw = page.request;
+  await request(raw, "/records", "POST", {
+    courseCode: "CSS 401",
+    status: "TRANSFER",
+    grade: "P",
+    term: "2026-SUMMER",
+    approved: false,
+  });
+  const record = (await request(raw, "/records")).find(
+    (r: { courseCode: string; term: string }) =>
+      r.courseCode === "CSS 401" && r.term === "2026-SUMMER",
+  );
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Administrator", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Transfer credits", exact: true })
+    .click();
+  await page
+    .getByLabel("Transfer student")
+    .selectOption({ label: "Atabek Bakhtyzhanov · student@planner.local" });
+  const row = page.getByRole("row").filter({ hasText: "CSS 401" });
+  await row
+    .getByRole("button", { name: "Approve credit", exact: true })
+    .click();
+  await expect(row).toContainText("Approved");
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await page.getByRole("button", { name: "Student", exact: true }).click();
+  await expect(page.locator('.app')).toBeVisible();
+  expect(
+    (await request(raw, "/records")).find(
+      (r: { id: string }) => r.id === record.id,
+    ).approved,
+  ).toBe(true);
+  await request(raw, `/records/${record.id}`, "DELETE");
 });

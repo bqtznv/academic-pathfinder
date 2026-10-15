@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Download,
-  FileUp,
-  Plus,
-  Trash2,
-  Upload,
-  CheckCircle2,
-} from "lucide-react";
+import { Download, FileUp, Plus, Trash2, Upload } from "lucide-react";
 import { api, download, termLabel, terms } from "./api";
 import type { AcademicRecord, Curriculum } from "./types";
 import { Badge, Button, Empty, Modal } from "./components";
@@ -84,10 +77,6 @@ export default function RecordsPage({
         <div>
           <span className="eyebrow">ACADEMIC OPERATIONS</span>
           <h1>Academic records</h1>
-          <p>
-            Bring your progress into the planner. Every attempt stays part of
-            your story.
-          </p>
         </div>
         <div className="button-row">
           <Button variant="secondary" onClick={exportRecords}>
@@ -114,17 +103,6 @@ export default function RecordsPage({
             <Plus size={16} />
             Add a record
           </Button>
-        </div>
-      </div>
-      <div className="records-info">
-        <CheckCircle2 size={20} />
-        <div>
-          <strong>Your transcript stays yours</strong>
-          <p>
-            Imports are previewed before saving. Transfer credits count only
-            after advisor approval. Failed attempts are retained; a later pass
-            earns credit once.
-          </p>
         </div>
       </div>
       <div className="record-stat-row">
@@ -246,7 +224,7 @@ export default function RecordsPage({
           </table>
           {!records.length && (
             <Empty
-              title="Let’s start with your progress"
+              title="No academic records"
               description="Add completed courses, current enrollment, or transfer credits to build a useful path."
             >
               <Button onClick={() => setModal("add")}>
@@ -355,7 +333,7 @@ export default function RecordsPage({
               </label>
               {entry.status === "TRANSFER" && (
                 <p className="callout amber">
-                  Your advisor will need to approve this transfer before it
+                  An administrator will need to approve this transfer before it
                   counts toward graduation.
                 </p>
               )}

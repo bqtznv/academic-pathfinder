@@ -189,41 +189,6 @@ class AcademicEngineTest {
   }
 
   @Test
-  void generatorHonorsPrerequisitesOfferingsAndCreditLimits() {
-    var p =
-        engine.generate(
-            curriculum(),
-            offerings(),
-            List.of(),
-            new Term(2024, "FALL"),
-            List.of(),
-            null,
-            List.of());
-    var e = engine.evaluate(curriculum(), offerings(), List.of(), p);
-    assertTrue(e.valid(), e.issues().toString());
-    assertTrue(e.complete());
-    assertEquals("2025-FALL", e.graduation());
-  }
-
-  @Test
-  void generatorLeavesUnavailableCourseUnscheduledAndReportsIncomplete() {
-    var os = offerings().stream().filter(o -> !o.courseCode().equals("C")).toList();
-    var p =
-        engine.generate(
-            curriculum(),
-            os,
-            List.of(passed()),
-            new Term(2025, "SPRING"),
-            List.of(),
-            null,
-            List.of());
-    var e = engine.evaluate(curriculum(), os, List.of(passed()), p);
-    assertFalse(e.complete());
-    assertTrue(e.missingCourses().contains("C"));
-    assertNull(e.graduation());
-  }
-
-  @Test
   void csvSupportsQuotedNamesAndRejectsTruncatedRows() {
     var rows = Csv.parse("code,name\r\nA,\"Course, advanced\"\r\n");
     assertEquals("Course, advanced", rows.getFirst().get("name"));

@@ -51,10 +51,6 @@ export default function CurriculumPage({
         <div>
           <span className="eyebrow">ACADEMIC OPERATIONS</span>
           <h1>My curriculum</h1>
-          <p>
-            Your degree, course by course. See what’s completed and what comes
-            next.
-          </p>
         </div>
         <Badge tone="blue">Main track · Version {curriculum.version}</Badge>
       </div>
@@ -72,7 +68,6 @@ export default function CurriculumPage({
             {curriculum.data.maxEcts} ECTS per semester
           </p>
         </div>
-        <span className="sample-label">Sample curriculum</span>
       </div>
       <div className="toolbar">
         <label className="search-box">
@@ -227,10 +222,7 @@ export default function CurriculumPage({
           <p>Try another search or status filter.</p>
         </div>
       )}
-      <p className="page-footnote">
-        This is an illustrative curriculum for development, not an official SDU
-        degree requirement. Published versions preserve existing plans.
-      </p>
+
       {selected && (
         <Modal title={selected.code} onClose={() => setSelected(null)}>
           <div className="modal-body course-detail">

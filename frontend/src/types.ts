@@ -2,10 +2,9 @@ export type User = {
   id: string;
   email: string;
   name: string;
-  role: "STUDENT" | "ADVISOR" | "ADMIN";
+  role: "STUDENT" | "ADMIN";
   program: string;
   curriculumYear: number;
-  advisorId: string | null;
 };
 export type Course = {
   code: string;
@@ -62,7 +61,6 @@ export type Plan = {
   curriculumId: string;
   data: PlanData;
   revision: number;
-  submitted: boolean;
   updatedAt: string;
 };
 export type Issue = {
@@ -90,21 +88,11 @@ export type Evaluation = {
     planned: number;
   }[];
 };
-export type Review = {
-  id: string;
-  advisor: string;
-  revision: number;
-  decision: string;
-  comment: string;
-  createdAt: string;
-  current: boolean;
-};
 export type Detail = {
   plan: Plan;
   curriculum: Curriculum;
   latestCurriculum: Curriculum;
   evaluation: Evaluation;
-  reviews: Review[];
   student: User;
   currentTerm: string;
 };

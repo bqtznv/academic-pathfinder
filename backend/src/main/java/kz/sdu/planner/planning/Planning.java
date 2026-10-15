@@ -1,7 +1,5 @@
 package kz.sdu.planner.planning;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.util.*;
 import kz.sdu.planner.accounts.*;
@@ -17,24 +15,18 @@ import org.springframework.stereotype.Service;
 public class Planning {
   private final CurriculumService curricula;
   private final StudentRecords records;
-  private final PlanRepository plans;
   private final AccountRepository users;
-  private final Json json;
   private final AcademicEngine engine = new AcademicEngine();
   private final LocalDate date;
 
   public Planning(
       CurriculumService c,
       StudentRecords r,
-      PlanRepository p,
       AccountRepository u,
-      Json j,
       @Value("${app.clock-date}") String d) {
     curricula = c;
     records = r;
-    plans = p;
     users = u;
-    json = j;
     date = LocalDate.parse(d);
   }
 
@@ -85,34 +77,6 @@ public class Planning {
         currentTerm());
   }
 
-  public PlanData generate(UUID student, UUID curriculum, PlanData previous) {
-    return engine.generate(
-        curricula.get(curriculum),
-        curricula.offerings(),
-        records.list(student),
-        currentTerm(),
-        previous == null ? List.of() : previous.electives(),
-        previous == null ? null : previous.target(),
-        previous == null ? List.of() : previous.failedCourses());
-  }
-
-  public String hash(Plan p) {
-    try {
-      String input =
-          json.write(
-              List.of(
-                  p.data(),
-                  curricula.get(p.curriculumId()),
-                  records.list(p.studentId()),
-                  curricula.offerings()));
-      return HexFormat.of()
-          .formatHex(
-              MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8)));
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
   public Map<String, Object> detail(Plan p) {
     var c = curricula.get(p.curriculumId());
     return Map.of(
@@ -124,8 +88,6 @@ public class Planning {
         curricula.latest(c.program(), c.year()),
         "evaluation",
         evaluate(p.studentId(), p.curriculumId(), p.data()),
-        "reviews",
-        plans.reviews(p.id(), p.revision(), hash(p)),
         "student",
         users.get(p.studentId()),
         "currentTerm",

@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowUpRight,
-  Bell,
   BookOpen,
   CalendarDays,
   Check,
   ChevronDown,
   ChevronRight,
-  CircleHelp,
-  ClipboardCheck,
   FileText,
   GitCompareArrows,
   Home,
@@ -27,7 +23,6 @@ import CurriculumPage from "./CurriculumPage";
 import RecordsPage from "./RecordsPage";
 import PlannerPage from "./PlannerPage";
 import ComparePage from "./ComparePage";
-import AdvisorPage from "./AdvisorPage";
 import AdminPage from "./AdminPage";
 import { api, refreshCsrf } from "./api";
 import type {
@@ -45,8 +40,6 @@ const labels: Record<string, string> = {
   records: "Academic records",
   planner: "Semester planner",
   compare: "Compare paths",
-  review: "Advisor review",
-  advisor: "Advisor workspace",
   admin: "Curriculum management",
 };
 export default function App() {
@@ -57,7 +50,6 @@ export default function App() {
     [toast, setToast] = useState("");
   const [view, setView] = useState("overview"),
     [mobile, setMobile] = useState(false),
-    [guide, setGuide] = useState(false),
     [profile, setProfile] = useState(false);
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null),
     [records, setRecords] = useState<AcademicRecord[]>([]),
@@ -80,11 +72,9 @@ export default function App() {
         setView(
           u.role === "ADMIN"
             ? "admin"
-            : u.role === "ADVISOR"
-              ? "advisor"
-              : Object.hasOwn(labels, location.hash.slice(1))
-                ? location.hash.slice(1)
-                : "overview",
+            : Object.hasOwn(labels, location.hash.slice(1))
+              ? location.hash.slice(1)
+              : "overview",
         );
       })
       .catch((e) => {
@@ -181,6 +171,8 @@ export default function App() {
           setDetail(null);
           setRecords([]);
           setDirty(false);
+          setProfile(false);
+          setMobile(false);
           selectedRef.current = "";
           history.replaceState(null, "", location.pathname);
           return refreshCsrf();
@@ -191,13 +183,7 @@ export default function App() {
   const onLogin = (u: User) => {
     setError("");
     setUser(u);
-    setView(
-      u.role === "ADMIN"
-        ? "admin"
-        : u.role === "ADVISOR"
-          ? "advisor"
-          : "overview",
-    );
+    setView(u.role === "ADMIN" ? "admin" : "overview");
   };
   if (initializing)
     return (
@@ -225,29 +211,20 @@ export default function App() {
     ["records", FileText, "Academic records"],
     ["planner", CalendarDays, "Semester planner"],
     ["compare", GitCompareArrows, "Compare paths"],
-    ["review", ClipboardCheck, "Advisor review"],
   ] as const;
   const activeNav =
-    user.role === "STUDENT"
-      ? studentNav
-      : user.role === "ADMIN"
-        ? ([
-            ["admin", Settings2, "Curriculum management"],
-            ["advisor", ClipboardCheck, "Advisor workspace"],
-            ["curriculum", BookOpen, "My curriculum"],
-          ] as const)
-        : ([
-            ["advisor", ClipboardCheck, "Advisor workspace"],
-            ["curriculum", BookOpen, "My curriculum"],
-          ] as const);
+    user.role === "ADMIN"
+      ? ([
+          ["admin", Settings2, "Curriculum management"],
+          ["curriculum", BookOpen, "My curriculum"],
+        ] as const)
+      : studentNav;
   const allowed = new Set(activeNav.map(([id]) => id));
   const active = allowed.has(view as never)
     ? view
     : user.role === "ADMIN"
       ? "admin"
-      : user.role === "ADVISOR"
-        ? "advisor"
-        : "overview";
+      : "overview";
   return (
     <div className="app">
       <div className="top-strip">
@@ -271,10 +248,6 @@ export default function App() {
           <Brand />
           <div className="portal-title">
             <strong>Student Information System</strong>
-            <button onClick={() => setGuide(true)}>
-              Portal guideline
-              <ArrowUpRight size={13} />
-            </button>
           </div>
           <div className="profile-summary">
             <div>
@@ -302,6 +275,14 @@ export default function App() {
               <ChevronDown size={16} />
             </button>
           </div>
+          <Button
+            variant="secondary"
+            className="header-logout"
+            onClick={logout}
+          >
+            <LogOut size={16} />
+            Logout
+          </Button>
         </div>
       </header>
       <div className="portal-shell">
@@ -316,23 +297,13 @@ export default function App() {
           <div className="sidebar-title">
             <span>STUDENT PORTAL</span>
             <Badge tone="blue">
-              {user.role === "STUDENT"
-                ? "Planner"
-                : user.role === "ADVISOR"
-                  ? "Advisor"
-                  : "Admin"}
+              {user.role === "STUDENT" ? "Planner" : "Admin"}
             </Badge>
           </div>
           <button
             className="home-link"
             onClick={() =>
-              navigate(
-                user.role === "ADMIN"
-                  ? "admin"
-                  : user.role === "ADVISOR"
-                    ? "advisor"
-                    : "overview",
-              )
+              navigate(user.role === "ADMIN" ? "admin" : "overview")
             }
           >
             <LayoutDashboard size={17} />
@@ -354,42 +325,16 @@ export default function App() {
               >
                 <Icon size={18} strokeWidth={1.7} />
                 {label}
-                {id === "planner" && <span className="nav-new">NEW</span>}
               </button>
             ))}
           </nav>
           <span className="nav-group-label">Information & support</span>
           <nav aria-label="Support">
-            <button onClick={() => setGuide(true)}>
-              <CircleHelp size={18} strokeWidth={1.7} />
-              How to use the planner
-            </button>
             <button onClick={() => setProfile(true)}>
               <Shield size={18} strokeWidth={1.7} />
               My account
             </button>
           </nav>
-          <div className="sidebar-tip">
-            <div>
-              <CalendarDays size={19} />
-              <span>One semester at a time.</span>
-            </div>
-            <p>A good path starts with knowing your options.</p>
-            {user.role === "STUDENT" && (
-              <button onClick={() => navigate("planner")}>
-                Plan your next move
-                <ArrowUpRight size={14} />
-              </button>
-            )}
-          </div>
-          <div className="sidebar-bottom">
-            <span className="sample-indicator" />
-            Sample academic data
-            <button onClick={logout}>
-              <LogOut size={16} />
-              Sign out
-            </button>
-          </div>
         </aside>
         <div className="content-wrap">
           <div className="breadcrumb">
@@ -402,12 +347,6 @@ export default function App() {
             </span>
             <ChevronRight size={12} />
             <strong>{labels[active]}</strong>
-            <button
-              aria-label="View portal updates"
-              onClick={() => setGuide(true)}
-            >
-              <Bell size={17} />
-            </button>
           </div>
           <main className="main-content">
             {error && (
@@ -475,10 +414,7 @@ export default function App() {
                         </div>
                       </div>
                       <section className="panel">
-                        <Empty
-                          title="Let’s find your path"
-                          description="We’ll use your academic records and curriculum to suggest a starting draft. Review it, make it yours, and save when you’re ready."
-                        >
+                        <Empty title="No saved plans" description="">
                           <Button onClick={create}>
                             <Plus size={16} />
                             Create my first path
@@ -493,15 +429,7 @@ export default function App() {
                     navigate={() => navigate("planner")}
                   />
                 )}
-                {["review", "advisor"].includes(active) && (
-                  <AdvisorPage
-                    key={detail?.plan.id || active}
-                    user={user}
-                    detail={detail}
-                    notify={notify}
-                    reload={load}
-                  />
-                )}
+
                 {active === "admin" && (
                   <AdminPage notify={notify} onRefresh={load} />
                 )}
@@ -512,12 +440,6 @@ export default function App() {
               </div>
             ) : null}
           </main>
-          <footer className="portal-footer">
-            <span>
-              Academic Path Planner <i /> Built for the journey ahead.
-            </span>
-            <span>Independent student project · SDU-inspired interface</span>
-          </footer>
         </div>
       </div>
       {toast && (
@@ -549,9 +471,7 @@ export default function App() {
                 await onSaved(d);
                 setCreating(false);
                 setView("planner");
-                notify(
-                  "Your starting path is ready. Review electives and academic checks before saving changes.",
-                );
+                notify("Plan created.");
               } catch (err) {
                 setModalError((err as Error).message);
               } finally {
@@ -560,11 +480,6 @@ export default function App() {
             }}
           >
             <div className="modal-body">
-              <p className="muted">
-                A suggested path uses your confirmed progress, degree
-                requirements and available courses. You can adjust every
-                semester.
-              </p>
               <label>
                 Path name
                 <input
@@ -589,7 +504,7 @@ export default function App() {
                 Cancel
               </Button>
               <Button type="submit" busy={busy}>
-                Create starting path
+                Create path
               </Button>
             </div>
           </form>
@@ -647,68 +562,10 @@ export default function App() {
               <dd>{user.program}</dd>
               <dt>Curriculum year</dt>
               <dd>{user.curriculumYear}</dd>
-              <dt>Authentication</dt>
-              <dd>Independent planner account</dd>
             </dl>
-            <p className="muted">
-              Your planner account is separate from the university portal. This
-              application does not ask for your SDU password.
-            </p>
           </div>
           <div className="modal-actions">
             <Button onClick={() => setProfile(false)}>Done</Button>
-          </div>
-        </Modal>
-      )}
-      {guide && (
-        <Modal
-          title="Your guide to the planner"
-          onClose={() => setGuide(false)}
-          wide
-        >
-          <div className="modal-body guide-content">
-            {[
-              [
-                "01",
-                "Start with your records",
-                "Select your program and curriculum year when registering. Add passed, failed, current and transfer courses in Academic records, or preview a CSV/JSON import before confirming it.",
-              ],
-              [
-                "02",
-                "Build a path",
-                "The semester planner creates a starting draft. Choose electives, add semesters, and drag courses between them. Course offerings and ECTS limits are checked along with prerequisite chains and class times.",
-              ],
-              [
-                "03",
-                "Explore a what-if",
-                "Try adding, dropping, moving or failing a course. Changes only affect your draft until saved. Save as copy to compare alternative paths without replacing the original.",
-              ],
-              [
-                "04",
-                "Check and ask for feedback",
-                "A graduation semester appears only for a valid, complete path. Set a target to see whether the path fits. Submit your saved plan so an advisor can approve it or request changes.",
-              ],
-            ].map(([n, title, body]) => (
-              <article key={n}>
-                <span>{n}</span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </div>
-              </article>
-            ))}
-            <div className="callout blue">
-              <strong>About this project</strong>
-              <p>
-                The sample curriculum and class times are illustrative. Live
-                university integration and globally optimal fastest-path search
-                are future extensions. Estimates assume future courses are
-                passed and remain available.
-              </p>
-            </div>
-          </div>
-          <div className="modal-actions">
-            <Button onClick={() => setGuide(false)}>Got it</Button>
           </div>
         </Modal>
       )}

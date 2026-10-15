@@ -33,9 +33,7 @@ public class Accounts {
 
   public void viewStudent(UUID id) {
     var me = current();
-    if (me.id().equals(id)
-        || me.role().equals("ADMIN")
-        || me.role().equals("ADVISOR") && me.id().equals(repository.get(id).advisorId())) return;
+    if (me.id().equals(id) || me.role().equals("ADMIN")) return;
     throw new ResponseStatusException(FORBIDDEN, "This student is not assigned to your account.");
   }
 

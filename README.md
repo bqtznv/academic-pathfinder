@@ -33,26 +33,24 @@ Use the existing checkout in cloud tasks. Tasks are already isolated; do not cre
 
 ## Explore the portal
 
-Choose **Student**, **Advisor**, or **Administrator** on the sign-in page. Manual demo logins are:
+Choose **Student** or **Administrator** on the sign-in page. Manual demo logins are:
 
 | Role          | Email                   | Password       |
 | ------------- | ----------------------- | -------------- |
 | Student       | `student@planner.local` | `Planner2026!` |
-| Advisor       | `advisor@planner.local` | `Planner2026!` |
 | Administrator | `admin@planner.local`   | `Planner2026!` |
 
-These are local demonstration accounts. The sample student has **120 / 240 ECTS earned**, six current courses, and a valid path finishing in **Spring 2028**. The 52-course catalog, credits and class times are illustrative, not official SDU data. New students can register and choose a published program and curriculum year; registration never grants advisor or administrator privileges.
+These are local demonstration accounts. The sample student has **120 / 240 ECTS earned**, six current courses, and a valid path finishing in **Spring 2028**. The 52-course catalog, credits and class times are illustrative, not official SDU data. New students can register and choose a published program and curriculum year; registration never grants administrator privileges.
 
-1. **Academic records:** add passed, failed, current and transfer attempts, or import CSV/JSON. Preview matches and replacement warnings before confirming. Advisors approve transfer credits.
+1. **Academic records:** add passed, failed, current and transfer attempts, or import CSV/JSON. Preview matches and replacement warnings before confirming. Administrators approve transfer credits in Curriculum management → Transfer credits.
 2. **My curriculum:** browse suggested semesters, search courses, filter academic status, and inspect prerequisites and actual offerings.
-3. **Semester planner:** choose electives and a target, suggest a starting path, drag courses between terms or use the Move buttons, and inspect the full-path checks. Add, drop, move or simulate failing a course without modifying the transcript.
+3. **Semester planner:** create an empty plan, choose electives and a target, add courses manually, drag courses between terms or use the Move buttons, and inspect the full-path checks. Add, drop, move or simulate failing a course without modifying the transcript.
 4. **Compare paths:** save a what-if as a copy and compare courses, semester loads, academic errors and graduation estimates.
-5. **Advisor review:** submit a saved plan. Assigned advisors can request changes or approve a valid, complete path. Changed academic inputs make earlier reviews outdated.
-6. **Curriculum management:** manually edit courses or review CSV/JSON imports, validate the prerequisite graph and credit totals, save an immutable draft, inspect affected students and publish it. Existing plan versions and choices remain intact. Maintain recurring and year-specific offerings and weekly class slots separately.
+5. **Curriculum management:** manually edit courses or review CSV/JSON imports, validate the prerequisite graph and credit totals, save an immutable draft, inspect affected students and publish it. Existing plan versions and choices remain intact. Maintain recurring and year-specific offerings and weekly class slots separately.
 
 Academic errors include missing or same-term prerequisites, unavailability, overlaps, overloaded semesters, duplicate scheduling, already-earned courses, invalid elective choices and backdated planned terms. Missing requirements prevent a confirmed finish date. Warnings such as low load, pending transfers and a graduation target delay remain distinct from errors.
 
-**Forecasts are conditional:** future courses must be passed and remain available. The starting-path generator is a deterministic, constraint-aware heuristic; it does not claim a globally optimal fastest graduation date. Authorized live SDU synchronization and an exhaustive optimizer are future extensions identified in the supplied architecture. The app uses independent planner accounts and does not collect university credentials.
+**Forecasts are conditional:** future courses must be passed and remain available. Plans are arranged manually. The app uses its own accounts and does not collect university credentials. Use the Logout button in the portal header to end a session.
 
 ## Configuration and persistence
 
@@ -114,8 +112,8 @@ backend/src/main/java/kz/sdu/planner/
   accounts/       Registration, session authentication and access rules
   curriculum/     Versioned degree requirements and separate offerings
   records/        Academic attempts, reviewed imports and transfer approvals
-  planning/       Saved paths, simulations, comparisons and advisor reviews
-  engine/         Pure academic rules and suggested-path generation
+  planning/       Saved paths, simulations, comparisons
+  engine/         Pure academic validation rules
   shared/         Immutable module values, JSON/CSV support and demo bootstrap
 backend/src/main/resources/db/migration/  PostgreSQL migrations
 frontend/src/                             React portal
@@ -124,3 +122,7 @@ scripts/                                  Setup, startup and test runners
 examples/                                 Import templates
 docs/                                     Architecture and API notes
 ```
+
+## Updating an existing installation
+
+Stop the application with Ctrl+C, run `git pull origin main`, then restart with `./scripts/dev.sh`. Existing saved plans and academic records are preserved. Advisor review and automatic path generation have been removed; the retired review tables in older databases are left untouched and have no active API. Transfer-credit approval is available to administrators.

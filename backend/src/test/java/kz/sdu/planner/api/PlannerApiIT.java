@@ -82,8 +82,7 @@ class PlannerApiIT {
             "Other student",
             "STUDENT",
             "Computer Science (EN)",
-            2024,
-            null);
+            2024);
     var foreign = plans.create(u.id(), "Private path", plan().curriculumId(), plan().data());
     mvc.perform(get("/api/plans/" + foreign.id()).with(user("student@planner.local")))
         .andExpect(status().isForbidden());
@@ -154,43 +153,10 @@ class PlannerApiIT {
       }
     assertFalse(id.isBlank());
     mvc.perform(
-            post("/api/advisor/students/" + student() + "/records/" + id + "/approve")
+            post("/api/admin/students/" + student() + "/records/" + id + "/approve")
                 .with(user("student@planner.local"))
                 .with(csrf()))
         .andExpect(status().isForbidden());
-  }
-
-  @Test
-  void advisorCanReviewOnlyAssignedSubmittedValidPlan() throws Exception {
-    var p = plan();
-    var request =
-        Map.of(
-            "decision",
-            "APPROVED",
-            "comment",
-            "Prerequisites and semester loads reviewed.",
-            "revision",
-            p.revision());
-    mvc.perform(
-            post("/api/plans/" + p.id() + "/reviews")
-                .with(user("advisor@planner.local"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(request)))
-        .andExpect(status().isBadRequest());
-    plans.submit(p.id());
-    mvc.perform(
-            post("/api/plans/" + p.id() + "/reviews")
-                .with(user("advisor@planner.local"))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.reviews[0].current").value(true));
-    var o = curricula.offerings().getFirst();
-    curricula.offering(new Offering(null, o.courseCode(), o.season(), o.year(), false, o.slots()));
-    mvc.perform(get("/api/plans/" + p.id()).with(user("student@planner.local")))
-        .andExpect(jsonPath("$.reviews[0].current").value(false));
   }
 
   @Test
@@ -209,5 +175,46 @@ class PlannerApiIT {
                 .with(csrf()))
         .andExpect(status().isOk());
     assertEquals(old.id(), plans.get(plan().id()).curriculumId());
+  }
+
+  @Test
+  void manualPlansHaveNoGeneratedCoursesAndRetiredEndpointsAreUnavailable() throws Exception {
+    var result =
+        mvc.perform(
+                post("/api/plans")
+                    .with(user("student@planner.local"))
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\":\"Manual path\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.plan.data.semesters").isEmpty())
+            .andExpect(jsonPath("$.reviews").doesNotExist())
+            .andReturn();
+    String id =
+        json.readTree(result.getResponse().getContentAsString()).get("plan").get("id").asText();
+    for (String endpoint : List.of("generate", "submit", "reviews"))
+      mvc.perform(
+              post("/api/plans/" + id + "/" + endpoint)
+                  .with(user("student@planner.local"))
+                  .with(csrf())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{}"))
+          .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void logoutInvalidatesAuthenticatedSession() throws Exception {
+    var login =
+        mvc.perform(
+                post("/api/auth/login")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"student@planner.local\",\"password\":\"Planner2026!\"}"))
+            .andReturn();
+    var session = (org.springframework.mock.web.MockHttpSession) login.getRequest().getSession();
+    mvc.perform(post("/api/auth/logout").session(session).with(csrf()))
+        .andExpect(status().isNoContent());
+    assertTrue(session.isInvalid());
+    mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
   }
 }

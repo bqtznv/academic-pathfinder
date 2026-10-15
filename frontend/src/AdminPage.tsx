@@ -1,3 +1,4 @@
+import TransferCredits from "./TransferCredits";
 import { useEffect, useState } from "react";
 import {
   CheckCircle2,
@@ -144,7 +145,6 @@ export default function AdminPage({
         <div>
           <span className="eyebrow">ADMINISTRATION</span>
           <h1>Curriculum management</h1>
-          <p>Review every update. Preserve every student’s choices.</p>
         </div>
         <Badge tone="purple">Administrator</Badge>
       </div>
@@ -161,13 +161,21 @@ export default function AdminPage({
         >
           Offerings & timetable
         </button>
+        <button
+          className={tab === "transfers" ? "active" : ""}
+          onClick={() => setTab("transfers")}
+        >
+          Transfer credits
+        </button>
       </div>
       {error && (
         <div role="alert" className="form-error">
           {error}
         </div>
       )}
-      {tab === "curriculum" ? (
+      {tab === "transfers" ? (
+        <TransferCredits notify={notify} />
+      ) : tab === "curriculum" ? (
         <>
           <section className="panel admin-version-bar">
             <label>

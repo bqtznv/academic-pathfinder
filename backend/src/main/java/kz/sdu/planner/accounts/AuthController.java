@@ -77,6 +77,8 @@ public class AuthController {
     try {
       var auth =
           manager.authenticate(new UsernamePasswordAuthenticationToken(email, login.password()));
+      if (repository.byEmail(email).orElseThrow().role().equals("ADVISOR"))
+        throw new ResponseStatusException(FORBIDDEN, "This account role is no longer supported.");
       if (request.getSession(false) != null) request.changeSessionId();
       var context = SecurityContextHolder.createEmptyContext();
       context.setAuthentication(auth);
@@ -101,7 +103,6 @@ public class AuthController {
         r.name().trim(),
         "STUDENT",
         r.program(),
-        r.curriculumYear(),
-        repository.defaultAdvisor().orElse(null));
+        r.curriculumYear());
   }
 }

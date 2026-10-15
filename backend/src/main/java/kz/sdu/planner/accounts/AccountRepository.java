@@ -22,8 +22,7 @@ public class AccountRepository {
         r.getString("name"),
         r.getString("role"),
         r.getString("program"),
-        r.getInt("curriculum_year"),
-        r.getObject("advisor_id", UUID.class));
+        r.getInt("curriculum_year"));
   }
 
   public Optional<User> byEmail(String email) {
@@ -43,40 +42,23 @@ public class AccountRepository {
     return db.queryForObject("select password_hash from users where email=?", String.class, email);
   }
 
-  public List<User> students(UUID advisor, boolean admin) {
-    return admin
-        ? db.query("select * from users where role='STUDENT' order by name", this::map)
-        : db.query("select * from users where advisor_id=? order by name", this::map, advisor);
-  }
-
-  public Optional<UUID> defaultAdvisor() {
-    return db
-        .queryForList(
-            "select id from users where role='ADVISOR' order by created_at limit 1", UUID.class)
-        .stream()
-        .findFirst();
+  public List<User> students() {
+    return db.query("select * from users where role='STUDENT' order by name", this::map);
   }
 
   public User create(
-      String email,
-      String password,
-      String name,
-      String role,
-      String program,
-      int year,
-      UUID advisor) {
+      String email, String password, String name, String role, String program, int year) {
     UUID id = UUID.randomUUID();
     db.update(
-        "insert into users(id,email,password_hash,name,role,program,curriculum_year,advisor_id)"
-            + " values(?,?,?,?,?,?,?,?)",
+        "insert into users(id,email,password_hash,name,role,program,curriculum_year)"
+            + " values(?,?,?,?,?,?,?)",
         id,
         email,
         password,
         name,
         role,
         program,
-        year,
-        advisor);
+        year);
     return get(id);
   }
 }

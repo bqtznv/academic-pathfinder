@@ -64,7 +64,6 @@ export default function Dashboard({
         <div>
           <span className="eyebrow">YOUR ACADEMIC OVERVIEW</span>
           <h1>My academic path</h1>
-          <p>A little clarity for the semesters ahead.</p>
         </div>
         <Badge tone="blue">
           {curriculum.year} · {curriculum.program}
@@ -75,19 +74,12 @@ export default function Dashboard({
           <span className="eyebrow">
             HELLO, {user.name.split(" ")[0].toUpperCase()}
           </span>
-          <h2>
-            {earned >= curriculum.data.totalEcts
-              ? "Your next chapter is here."
-              : earned >= curriculum.data.totalEcts / 2
-                ? "You’re halfway to your next chapter."
-                : "Every semester brings you closer."}
-          </h2>
+          <h2>{user.name}</h2>
           <p>
             You’ve earned{" "}
             <strong>
               {earned} of {curriculum.data.totalEcts} ECTS
             </strong>
-            . Let’s make a plan for the rest.
           </p>
           <Button onClick={() => (detail ? navigate("planner") : create())}>
             {detail ? "Open semester planner" : "Create my first path"}
@@ -224,10 +216,7 @@ export default function Dashboard({
                 ))}
               </div>
             ) : (
-              <Empty
-                title="Your path starts here"
-                description="Add your completed courses, then generate a starting draft."
-              >
+              <Empty title="No saved plan" description="">
                 <Button onClick={create}>Create a path</Button>
               </Empty>
             )}
@@ -377,18 +366,6 @@ export default function Dashboard({
               </div>
             )}
           </section>
-          <aside className="tip-card">
-            <span className="eyebrow">A SMALL REMINDER</span>
-            <h3>Try it before you change it.</h3>
-            <p>
-              Move, add, drop or simulate failing a course. Your saved plan
-              stays safe until you choose to save.
-            </p>
-            <button className="text-button" onClick={() => navigate("planner")}>
-              Explore what-if planning
-              <ArrowRight size={15} />
-            </button>
-          </aside>
         </div>
       </div>
     </>

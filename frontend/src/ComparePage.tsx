@@ -48,7 +48,6 @@ export default function ComparePage({
         <div>
           <span className="eyebrow">EXPLORE YOUR OPTIONS</span>
           <h1>Compare paths</h1>
-          <p>Different choices. A clearer view of the consequences.</p>
         </div>
         <Badge tone="blue">
           <GitCompareArrows size={14} />
@@ -58,7 +57,7 @@ export default function ComparePage({
       {plans.length < 2 ? (
         <section className="panel">
           <Empty
-            title="Two paths, one decision"
+            title="No alternative plans"
             description="Open the planner, make a change, and use Save as copy to keep an alternative alongside your original path."
           >
             <Button onClick={navigate}>

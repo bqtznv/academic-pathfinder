@@ -4,39 +4,36 @@ All endpoints return JSON, except successful deletions and logout. Errors includ
 
 Call `GET /api/auth/csrf` first. Send the returned `token` as `X-XSRF-TOKEN` on POST/PUT/DELETE, retain the session cookies, and refresh the token after logout. Login returns an account summary; passwords/hashes are never returned. Unauthenticated requests receive 401, authorization failures receive 403, validation failures 400 and optimistic save conflicts 409.
 
-| Method and path                                              | Behavior                                                                                        |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `GET /api/health`                                            | Check the API and a real PostgreSQL query                                                       |
-| `GET /api/programs`                                          | Public published program/year choices                                                           |
-| `POST /api/auth/register`                                    | `{name,email,password,program,curriculumYear}`; always a student                                |
-| `POST /api/auth/login`                                       | `{email,password}`; creates a server session                                                    |
-| `GET /api/auth/me`                                           | Current account                                                                                 |
-| `POST /api/auth/logout`                                      | Invalidate the session                                                                          |
-| `GET /api/curriculum`                                        | Latest published curriculum for the account's program/year                                      |
-| `GET /api/offerings`                                         | Actual availability and weekly timetable, independent of curriculum versions                    |
-| `GET, POST /api/records`                                     | List or upsert one own attempt; approved is always false for student writes                     |
-| `DELETE /api/records/{id}`                                   | Remove an own attempt                                                                           |
-| `POST /api/records/import-preview`                           | `{format:"CSV" or "JSON",content}`; validates matches and returns rows/warnings without writing |
-| `POST /api/records/import`                                   | `{rows:[...]}`; revalidates and atomically saves confirmed records                              |
-| `GET /api/plans`                                             | Own paths; authorized advisor can supply `?studentId=UUID`                                      |
-| `POST /api/plans`                                            | `{name,curriculumId?,data?}`; omitted data generates a draft                                    |
-| `GET /api/plans/{id}`                                        | Plan, its curriculum, latest available version, evaluation, student and review history          |
-| `PUT /api/plans/{id}`                                        | `{name,revision,curriculumId?,data}`; owner only, optimistic revision check                     |
-| `DELETE /api/plans/{id}`                                     | Delete an own path and its reviews                                                              |
-| `POST /api/plans/{id}/preview`                               | `{curriculumId?,data}`; evaluates a temporary copy without persistence                          |
-| `POST /api/plans/{id}/generate`                              | `{curriculumId?,data?}`; returns suggested data/evaluation without persistence                  |
-| `GET /api/plans/{id}/compare/{otherId}`                      | Fresh evaluations and data for two paths belonging to the same authorized student               |
-| `POST /api/plans/{id}/submit`                                | Submit an own saved revision for advisor review                                                 |
-| `POST /api/plans/{id}/reviews`                               | Advisor/admin `{decision,comment,revision}`; `APPROVED` or `CHANGES_REQUESTED`                  |
-| `GET /api/advisor/students`                                  | Assigned students; administrators can list all students                                         |
-| `GET /api/advisor/students/{id}/records`                     | Authorized student's academic attempts                                                          |
-| `POST /api/advisor/students/{id}/records/{recordId}/approve` | Approve authorized transfer credit                                                              |
-| `GET /api/admin/curricula`                                   | All versions, including unpublished drafts                                                      |
-| `POST /api/admin/curricula`                                  | `{program,year,data}`; validate and save a new unpublished version                              |
-| `POST /api/admin/curricula/import-preview`                   | `{format,content,baseCurriculumId?}`; JSON full data or CSV courses with base metadata          |
-| `GET /api/admin/curricula/{id}/impact`                       | Affected-student count and publication behavior                                                 |
-| `POST /api/admin/curricula/{id}/publish`                     | Publish a reviewed draft; old versions remain                                                   |
-| `PUT /api/admin/offerings`                                   | Upsert `{courseCode,season,year,available,slots}`; year null means recurring                    |
+| Method and path                                            | Behavior                                                                                        |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `GET /api/health`                                          | Check the API and a real PostgreSQL query                                                       |
+| `GET /api/programs`                                        | Public published program/year choices                                                           |
+| `POST /api/auth/register`                                  | `{name,email,password,program,curriculumYear}`; always a student                                |
+| `POST /api/auth/login`                                     | `{email,password}`; creates a server session                                                    |
+| `GET /api/auth/me`                                         | Current account                                                                                 |
+| `POST /api/auth/logout`                                    | Invalidate the session                                                                          |
+| `GET /api/curriculum`                                      | Latest published curriculum for the account's program/year                                      |
+| `GET /api/offerings`                                       | Actual availability and weekly timetable, independent of curriculum versions                    |
+| `GET, POST /api/records`                                   | List or upsert one own attempt; approved is always false for student writes                     |
+| `DELETE /api/records/{id}`                                 | Remove an own attempt                                                                           |
+| `POST /api/records/import-preview`                         | `{format:"CSV" or "JSON",content}`; validates matches and returns rows/warnings without writing |
+| `POST /api/records/import`                                 | `{rows:[...]}`; revalidates and atomically saves confirmed records                              |
+| `GET /api/plans`                                           | Own paths; administrator can supply `?studentId=UUID`                                           |
+| `POST /api/plans`                                          | `{name,curriculumId?,data?}`; omitted data creates an empty manual plan                         |
+| `GET /api/plans/{id}`                                      | Plan, its curriculum, latest available version, evaluation, and student                         |
+| `PUT /api/plans/{id}`                                      | `{name,revision,curriculumId?,data}`; owner only, optimistic revision check                     |
+| `DELETE /api/plans/{id}`                                   | Delete an own path                                                                              |
+| `POST /api/plans/{id}/preview`                             | `{curriculumId?,data}`; evaluates a temporary copy without persistence                          |
+| `GET /api/plans/{id}/compare/{otherId}`                    | Fresh evaluations and data for two paths belonging to the same authorized student               |
+| `GET /api/admin/students`                                  | List students for administrator transfer-credit approval                                        |
+| `GET /api/admin/students/{id}/records`                     | Authorized student's academic attempts                                                          |
+| `POST /api/admin/students/{id}/records/{recordId}/approve` | Approve authorized transfer credit                                                              |
+| `GET /api/admin/curricula`                                 | All versions, including unpublished drafts                                                      |
+| `POST /api/admin/curricula`                                | `{program,year,data}`; validate and save a new unpublished version                              |
+| `POST /api/admin/curricula/import-preview`                 | `{format,content,baseCurriculumId?}`; JSON full data or CSV courses with base metadata          |
+| `GET /api/admin/curricula/{id}/impact`                     | Affected-student count and publication behavior                                                 |
+| `POST /api/admin/curricula/{id}/publish`                   | Publish a reviewed draft; old versions remain                                                   |
+| `PUT /api/admin/offerings`                                 | Upsert `{courseCode,season,year,available,slots}`; year null means recurring                    |
 
 ## Values
 
